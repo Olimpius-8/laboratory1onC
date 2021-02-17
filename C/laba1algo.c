@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int ** enterMatrix(int *sizelines, int *sizecol){
+int ** enterMatrix(int *sizelines, int **sizecol){
     int **matrix,*col;
     int i, j, n, m;
     printf("Введите количество строк: ");
@@ -21,7 +21,7 @@ int ** enterMatrix(int *sizelines, int *sizecol){
         }
     }
     *sizelines = n;
-    sizecol = col;
+    *sizecol = col;
     return matrix;
 }
 
@@ -29,15 +29,9 @@ void printDoubleMatrix(int **matrix, int sizelines, int *sizecolumns){
     int i,j;
     printf("%d lines\n", sizelines);
     for (i = 0; i < sizelines; i++) {
-        printf("%d columns of line %d\n", *(sizecolumns+i), i);
-        if (i!=0) {
-            for (j = 0; j < *(sizecolumns+i); j++)
-                printf("%d  \t", *(*(matrix + i*sizecolumns[i-1])+j));
-        }
-        else{
-            for (j = 0; j < *(sizecolumns+i); j++)
-                printf("%d  \t", *(*(matrix + i*sizecolumns[i-1])+j));
-        }
+        printf("%d columns of line %d\n", sizecolumns[i], i);
+        for (j = 0; j < *(sizecolumns+i); j++)
+            printf("%d  \t", matrix[i][j]);
         printf("\n");
     }
 }
@@ -56,9 +50,8 @@ void main(){
     //int *averagematrix;
     int sizelines=0;
     int *sizecolumns;
-    sourcematrix = enterMatrix(&sizelines, sizecolumns);
-    printf("%d lines\n", sizelines);
-    printf("%d ", **sourcematrix);
-    //printDoubleMatrix(**sourcematrix, sizelines, *sizecolumns);
+    sourcematrix = enterMatrix(&sizelines, &sizecolumns);
+
+    printDoubleMatrix(sourcematrix, sizelines, sizecolumns);
     /*eraseMatrices(sourcematrix, /*averagematrix*///, sizecolumns);
 }
