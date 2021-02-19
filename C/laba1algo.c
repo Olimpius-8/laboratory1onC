@@ -1,100 +1,108 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void enterMatrix(int ***source, int **lengths, int *lines,  int **sizecol){
-    int **matrix,*col,*lengthmatrix;
-    int i, j, n, m,value, maxsize;
+typedef struct Line{
+    int size;
+    double* array;
+}Line;
+
+typedef struct Matrix{
+    int size;
+    Line *matrix;
+}Matrix;
+
+void enterMatrix(Matrix *rm, Line *lengths){
+    double *p;
+    int i, j, n,m, value, maxsize;
     printf("Введите количество строк: ");
     scanf("%d", &n);
-    matrix = (int**)malloc(n * sizeof(int*));
-    lengthmatrix = (int*)malloc(n * sizeof(int));
-    col = (int*)malloc(n * sizeof(int)); // массив кол-ва элеменов в строках массива a
+    rm->size = n;
+    rm->matrix = (Line*)calloc(n,sizeof(Line));
+    lengths->array = (double*)calloc(n,sizeof(double));
+    //col = (int*)malloc(n * sizeof(int)); // массив кол-ва элеменов в строках массива a
     // Ввод элементов массива
-
-    for (i = 0; i<n; i++)
+    for (i = 0; i<rm->size; i++)
     {
         printf("Введите количество столбцов строки %d: ", i+1);
-        scanf("%d", &m);
-        col[i] = m;
-        lengthmatrix[i]= 0;
-        matrix[i] = (int*)malloc(m * sizeof(int));
-        for (j = 0; j<m; j++) {
+        scanf("%d", &n);
+        rm->matrix[i].size = n;
+        rm->matrix[i].array = (double*)calloc(m,sizeof(int));
+        for (j = 0; j<n; j++) {
             printf("matrix[%d][%d]= ", i+1, j+1);
             scanf("%d", &value);
             maxsize = 0;
-            matrix[i][j] = value;
+            rm->matrix[i].array[j] = value;
             while (value>0) {
                 maxsize++;
                 value/=10;
             }
-
-            if (maxsize > lengthmatrix[i])
-                lengthmatrix[i] = maxsize;
+            lengths->array[i] += maxsize;
         }
+        lengths->array[i]/=m;
     }
-    *lines = n;
-    *sizecol = col;
-    *source = matrix;
-    *lengths = lengthmatrix;
 }
 
-void maximusLengthNumberMatrix(int **source,int ***results, int *lengthmatrix, int lines, int *sourcecolumns, int **resultcolumns){
+void maximusLengthNumberMatrix(Matrix *source, Matrix *results, Line *lengtharray){
     int i,j,k,length,value;
-    int **matrix = (int**)malloc(lines*sizeof(int*));
-    int *columns = (int*)malloc(lines*sizeof(int));
-    for (i = 0; i < lines; i++) {
-        matrix[i] = (int*)malloc(sourcecolumns[i]*sizeof(int));
-        //printf("length [%d] = %d", i, lengthmatrix[i]);
-        for (k = j = 0; j < sourcecolumns[i]; j++) {
-            value = source[i][j];
+    results->matrix = (Line*)calloc(source->size,sizeof(Line));
+    for (i = 0; i < source->size; i++) {
+        results->matrix[i].array = (double*)malloc(source->matrix[i].size*sizeof(double));
+        //printf("length [%d] = %d", i, lengtharray[i]);
+        for (k = j = 0; j < source->matrix[i].size; j++) {
+            value = source->matrix[i].array[j];
             length = 0;
             while (value > 0) {
                 length++;
                 value/=10;
             }
-            if (length == lengthmatrix[i]) {
-                matrix[i][k++] = source[i][j];
+            if (length > lengtharray->array[j]) {
+                results->matrix[i].array[k++] = source->matrix[i].array[j];
             }
         }
-        matrix[i] = (int*)realloc(matrix[i],k);
-        columns[i] = k;
+        results->matrix[i].array = realloc(results->matrix[i].array,sizeof(double));
+        results->matrix[i].size = k;
     }
-    *results = matrix;
-    *resultcolumns = columns;
 }
 
-void printDoubleMatrix(int **matrix, int lines, int *columns){
+void printDoubleMatrix(Matrix *printed){
     int i,j;
     //printf("%d lines\n", lines);
-    for (i = 0; i < lines; i++) {
+    for (i = 0; i < printed->size; i++) {
         //printf("%d sourcecolumns of line %d\n", sourcecolumns[i], i);
-        for (j = 0; j < *(columns+i); j++)
-            printf("%d  \t", matrix[i][j]);
+        for (j = 0; j < printed->matrix[i].size; j++)
+            printf("%5.2f  \t", printed->matrix[i].array[j]);
         printf("\n");
     }
 }
 
-void eraseMatrices(int **matrix, int **results, int *lengthmatrix,  int *sourcecolumns, int *resultcolumns){
+void eraseMatrices(Matrix *source, Matrix *results, Line *lengtharray){
     int i;
-    for (i = 0; i < sourcecolumns[i]; i++) {
-        free(matrix[i]);
-        free(results[i]);
+    for (i = 0; i < source->size; i++) {
+        free(source->matrix[i].array);
+        free(results->matrix[i].array);
     }
-    free(lengthmatrix);
-    free(sourcecolumns);
-    free(matrix);
+    free(source->matrix);
+    free(results->matrix);
+    free(lengtharray->array);
+    source->size = 0;
+    results->size = 0;
+    lengtharray->size=0;
+    source->matrix=NULL;
+    results->matrix=NULL;
+    lengtharray->array =NULL;
 }
 
 void main(){
-    int **source;
-    int **result;
-    int *lengthmatrix;  //матрица с длинами чисел в строке
-    int lines;
-    int *sourcecolumns; //количество столбцов в каждой строке исходной матрицы
-    int *resultcolumns; //количество столбцов в каждой строке результирующей матрицы
-    enterMatrix(&source, &lengthmatrix, &lines,  &sourcecolumns);
-    printDoubleMatrix(source, lines, sourcecolumns);
-    maximusLengthNumberMatrix(source, &result,lengthmatrix,lines,sourcecolumns,&resultcolumns);
-    printDoubleMatrix(result, lines, resultcolumns);
-    eraseMatrices(source, result, lengthmatrix, sourcecolumns, resultcolumns);
+
+    Matrix *source = {0, NULL};
+    Matrix *result = {0,NULL};
+    Line *lengtharray = {0, NULL};  //матрица с длинами чисел в строке
+
+    enterMatrix(source, lengtharray);
+    printf("Source Matrix\n");
+    printDoubleMatrix(source);
+    maximusLengthNumberMatrix(source, result,lengtharray);
+    printf("Result matrix\n");
+    printDoubleMatrix(result);
+    eraseMatrices(source, result, lengtharray);
 }
